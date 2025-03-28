@@ -1,6 +1,8 @@
 import streamlit as st
 import ast
 import re
+import base64
+import streamlit.components.v1 as components
 
 from generate_pdf import create_pdf
 from agent import gpt_collect_info
@@ -35,8 +37,11 @@ if st.session_state["raspuns"]:
                 parsed_data = ast.literal_eval(dict_text)
                 path = fill_anexa4(parsed_data)
                 with open(path, "rb") as f:
-                    st.success("✅ Anexa 4 a fost completată cu succes!")
-                    st.download_button("⬇️ Descarcă PDF completat", f, file_name="Anexa4_Completata.pdf")
+                    base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="700px" type="application/pdf"></iframe>'
+                    st.markdown("### 📄 Previzualizare document completat:")
+                    components.html(pdf_display, height=700)
+                    st.download_button("⬇️ Descarcă PDF completat", base64_pdf, file_name="Anexa4_Completata.pdf", mime="application/pdf")
             else:
                 st.error("❌ Nu s-a găsit un dicționar valid în răspunsul GPT.")
         except Exception as e:
