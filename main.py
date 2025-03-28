@@ -3,10 +3,14 @@ import ast
 import re
 import base64
 import streamlit.components.v1 as components
+from io import BytesIO
 
 from generate_pdf import create_pdf
 from agent import gpt_collect_info
 from fill_anexa4 import fill_anexa4
+
+from pdf2image import convert_from_bytes
+from PIL import Image
 
 st.set_page_config(page_title="GPT Agent – Completare Formulare", layout="centered")
 st.title("🧠 GPT Agent – Completare Anexa 4")
@@ -36,12 +40,22 @@ if st.session_state["raspuns"]:
                 dict_text = match.group(0)
                 parsed_data = ast.literal_eval(dict_text)
                 path = fill_anexa4(parsed_data)
+
+                # Citim PDF-ul generat
                 with open(path, "rb") as f:
-                    base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="700px" type="application/pdf"></iframe>'
-                    st.markdown("### 📄 Previzualizare document completat:")
-                    components.html(pdf_display, height=700)
-                    st.download_button("⬇️ Descarcă PDF completat", base64_pdf, file_name="Anexa4_Completata.pdf", mime="application/pdf")
+                    pdf_bytes = f.read()
+                    base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+
+                # Convertim PDF → PNG (prima pagină)
+                images = convert_from_bytes(pdf_bytes)
+                image_buffer = BytesIO()
+                images[0].save(image_buffer, format="PNG")
+                image_buffer.seek(0)
+
+                st.markdown("### 🖼️ Previzualizare imagine Anexa completată:")
+                st.image(image_buffer, caption="Pagina 1 – Anexa 4")
+
+                st.download_button("⬇️ Descarcă PDF completat", base64_pdf, file_name="Anexa4_Completata.pdf", mime="application/pdf")
             else:
                 st.error("❌ Nu s-a găsit un dicționar valid în răspunsul GPT.")
         except Exception as e:

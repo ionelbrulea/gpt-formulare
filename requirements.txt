@@ -2,3 +2,5 @@ streamlit
 openai
 PyPDF2
 reportlab
+pdf2image
+pillow
